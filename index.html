@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>賓果抽獎</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: url('background.png') center center / cover no-repeat fixed;
+            background-color: #8B1D2D;
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            color: #F0D890;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+
+        .draw-section {
+            background: rgba(139, 29, 45, 0.85);
+            border: 3px solid #D4A84B;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .current-number {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(145deg, #F0D890, #D4A84B);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            box-shadow: 0 4px 20px rgba(212, 168, 75, 0.5);
+        }
+
+        .current-number span {
+            font-size: 5.5rem;
+            font-weight: bold;
+            color: #8B1D2D;
+        }
+
+        .current-number.spinning span {
+            animation: spin 0.1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .current-number.pop {
+            animation: pop 0.3s ease-out;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-draw {
+            background: linear-gradient(145deg, #F0D890, #D4A84B);
+            color: #8B1D2D;
+        }
+
+        .btn-draw:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(212, 168, 75, 0.6);
+        }
+
+        .btn-draw:disabled {
+            background: #888;
+            color: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: #F0D890;
+            border: 2px solid #D4A84B;
+        }
+
+        .btn-reset:hover {
+            background: rgba(212, 168, 75, 0.2);
+        }
+
+        .stats {
+            color: #FFF8E7;
+            font-size: 1.1rem;
+            margin-top: 15px;
+        }
+
+        .history-section {
+            background: rgba(139, 29, 45, 0.85);
+            border: 3px solid #D4A84B;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .history-section h2 {
+            color: #F0D890;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(145deg, #F0D890, #D4A84B);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #8B1D2D;
+            font-size: 1.1rem;
+            animation: pop 0.3s ease-out;
+        }
+
+        .history-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .history-grid::-webkit-scrollbar-thumb {
+            background: #D4A84B;
+            border-radius: 4px;
+        }
+
+        .empty-message {
+            color: #FFF8E7;
+            text-align: center;
+            opacity: 0.7;
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .current-number {
+                width: 120px;
+                height: 120px;
+            }
+
+            .current-number span {
+                font-size: 3rem;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+
+            .draw-section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>賓果抽獎</h1>
+
+        <div class="draw-section">
+            <div class="current-number" id="currentNumber">
+                <span>?</span>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-draw" id="drawBtn" onclick="draw()">抽獎</button>
+                <button class="btn btn-reset" onclick="reset()">重新開始</button>
+            </div>
+            <p class="stats">已抽出: <span id="drawnCount">0</span> / 75</p>
+        </div>
+
+        <div class="history-section">
+            <h2>已抽出號碼</h2>
+            <div class="history-grid" id="historyGrid">
+                <p class="empty-message">尚未抽出任何號碼</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化可抽的號碼 (1-75)
+        let availableNumbers = [];
+        let drawnNumbers = [];
+
+        function initNumbers() {
+            availableNumbers = [];
+            for (let i = 1; i <= 75; i++) {
+                availableNumbers.push(i);
+            }
+            drawnNumbers = [];
+        }
+
+        // 初始化
+        initNumbers();
+
+        function draw() {
+            if (availableNumbers.length === 0) {
+                alert('所有號碼都已抽出！');
+                return;
+            }
+
+            const currentNumberEl = document.getElementById('currentNumber');
+            const drawBtn = document.getElementById('drawBtn');
+
+            // 禁用按鈕
+            drawBtn.disabled = true;
+
+            // 開始旋轉動畫
+            currentNumberEl.classList.add('spinning');
+
+            // 隨機顯示數字的動畫
+            let spinCount = 0;
+            const spinInterval = setInterval(() => {
+                const randomDisplay = Math.floor(Math.random() * 75) + 1;
+                currentNumberEl.querySelector('span').textContent = randomDisplay;
+                spinCount++;
+
+                if (spinCount >= 15) {
+                    clearInterval(spinInterval);
+
+                    // 實際抽出號碼
+                    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+                    const drawnNumber = availableNumbers.splice(randomIndex, 1)[0];
+                    drawnNumbers.push(drawnNumber);
+
+                    // 顯示結果
+                    currentNumberEl.classList.remove('spinning');
+                    currentNumberEl.classList.add('pop');
+                    currentNumberEl.querySelector('span').textContent = drawnNumber;
+
+                    setTimeout(() => {
+                        currentNumberEl.classList.remove('pop');
+                    }, 300);
+
+                    // 更新歷史記錄
+                    updateHistory();
+
+                    // 更新統計
+                    document.getElementById('drawnCount').textContent = drawnNumbers.length;
+
+                    // 重新啟用按鈕
+                    drawBtn.disabled = false;
+
+                    // 如果全部抽完
+                    if (availableNumbers.length === 0) {
+                        drawBtn.disabled = true;
+                        drawBtn.textContent = '已抽完';
+                    }
+                }
+            }, 80);
+        }
+
+        function updateHistory() {
+            const historyGrid = document.getElementById('historyGrid');
+            historyGrid.innerHTML = '';
+
+            // 按照抽出順序顯示（最新的在前面）
+            const reversedNumbers = [...drawnNumbers].reverse();
+
+            reversedNumbers.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'history-number';
+                div.textContent = num;
+                historyGrid.appendChild(div);
+            });
+        }
+
+        function reset() {
+            if (drawnNumbers.length === 0) return;
+
+            if (confirm('確定要重新開始嗎？所有已抽出的號碼將會清除。')) {
+                initNumbers();
+                document.getElementById('currentNumber').querySelector('span').textContent = '?';
+                document.getElementById('drawnCount').textContent = '0';
+                document.getElementById('historyGrid').innerHTML = '<p class="empty-message">尚未抽出任何號碼</p>';
+
+                const drawBtn = document.getElementById('drawBtn');
+                drawBtn.disabled = false;
+                drawBtn.textContent = '抽獎';
+            }
+        }
+    </script>
+</body>
+</html>
