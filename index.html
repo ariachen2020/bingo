@@ -47,20 +47,27 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
+        .current-numbers {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 0 auto 30px;
+        }
+
         .current-number {
-            width: 200px;
-            height: 200px;
+            width: 100px;
+            height: 100px;
             background: linear-gradient(145deg, #F0D890, #D4A84B);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 30px;
             box-shadow: 0 4px 20px rgba(212, 168, 75, 0.5);
         }
 
         .current-number span {
-            font-size: 5.5rem;
+            font-size: 2.5rem;
             font-weight: bold;
             color: #8B1D2D;
         }
@@ -199,13 +206,17 @@
                 font-size: 1.8rem;
             }
 
+            .current-numbers {
+                gap: 8px;
+            }
+
             .current-number {
-                width: 120px;
-                height: 120px;
+                width: 60px;
+                height: 60px;
             }
 
             .current-number span {
-                font-size: 3rem;
+                font-size: 1.5rem;
             }
 
             .btn {
@@ -224,11 +235,15 @@
         <h1>賓果抽獎</h1>
 
         <div class="draw-section">
-            <div class="current-number" id="currentNumber">
-                <span>?</span>
+            <div class="current-numbers" id="currentNumbers">
+                <div class="current-number"><span>?</span></div>
+                <div class="current-number"><span>?</span></div>
+                <div class="current-number"><span>?</span></div>
+                <div class="current-number"><span>?</span></div>
+                <div class="current-number"><span>?</span></div>
             </div>
             <div class="buttons">
-                <button class="btn btn-draw" id="drawBtn" onclick="draw()">抽獎</button>
+                <button class="btn btn-draw" id="drawBtn" onclick="draw()">抽獎 (5個)</button>
                 <button class="btn btn-reset" onclick="reset()">重新開始</button>
             </div>
             <p class="stats">已抽出: <span id="drawnCount">0</span> / 75</p>
@@ -264,37 +279,59 @@
                 return;
             }
 
-            const currentNumberEl = document.getElementById('currentNumber');
+            const currentNumberEls = document.querySelectorAll('#currentNumbers .current-number');
             const drawBtn = document.getElementById('drawBtn');
+
+            // 計算這次要抽幾個（最多5個，但不能超過剩餘數量）
+            const drawCount = Math.min(5, availableNumbers.length);
 
             // 禁用按鈕
             drawBtn.disabled = true;
 
             // 開始旋轉動畫
-            currentNumberEl.classList.add('spinning');
+            currentNumberEls.forEach((el, i) => {
+                if (i < drawCount) {
+                    el.classList.add('spinning');
+                    el.querySelector('span').textContent = '?';
+                } else {
+                    el.querySelector('span').textContent = '-';
+                }
+            });
 
             // 隨機顯示數字的動畫
             let spinCount = 0;
             const spinInterval = setInterval(() => {
-                const randomDisplay = Math.floor(Math.random() * 75) + 1;
-                currentNumberEl.querySelector('span').textContent = randomDisplay;
+                currentNumberEls.forEach((el, i) => {
+                    if (i < drawCount) {
+                        const randomDisplay = Math.floor(Math.random() * 75) + 1;
+                        el.querySelector('span').textContent = randomDisplay;
+                    }
+                });
                 spinCount++;
 
                 if (spinCount >= 15) {
                     clearInterval(spinInterval);
 
                     // 實際抽出號碼
-                    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
-                    const drawnNumber = availableNumbers.splice(randomIndex, 1)[0];
-                    drawnNumbers.push(drawnNumber);
+                    const newDrawnNumbers = [];
+                    for (let i = 0; i < drawCount; i++) {
+                        const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+                        const drawnNumber = availableNumbers.splice(randomIndex, 1)[0];
+                        newDrawnNumbers.push(drawnNumber);
+                        drawnNumbers.push(drawnNumber);
+                    }
 
                     // 顯示結果
-                    currentNumberEl.classList.remove('spinning');
-                    currentNumberEl.classList.add('pop');
-                    currentNumberEl.querySelector('span').textContent = drawnNumber;
+                    currentNumberEls.forEach((el, i) => {
+                        el.classList.remove('spinning');
+                        if (i < drawCount) {
+                            el.classList.add('pop');
+                            el.querySelector('span').textContent = newDrawnNumbers[i];
+                        }
+                    });
 
                     setTimeout(() => {
-                        currentNumberEl.classList.remove('pop');
+                        currentNumberEls.forEach(el => el.classList.remove('pop'));
                     }, 300);
 
                     // 更新歷史記錄
@@ -335,13 +372,15 @@
 
             if (confirm('確定要重新開始嗎？所有已抽出的號碼將會清除。')) {
                 initNumbers();
-                document.getElementById('currentNumber').querySelector('span').textContent = '?';
+                document.querySelectorAll('#currentNumbers .current-number span').forEach(span => {
+                    span.textContent = '?';
+                });
                 document.getElementById('drawnCount').textContent = '0';
                 document.getElementById('historyGrid').innerHTML = '<p class="empty-message">尚未抽出任何號碼</p>';
 
                 const drawBtn = document.getElementById('drawBtn');
                 drawBtn.disabled = false;
-                drawBtn.textContent = '抽獎';
+                drawBtn.textContent = '抽獎 (5個)';
             }
         }
     </script>
